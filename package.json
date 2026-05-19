@@ -3,6 +3,9 @@
     "axios": "^1.16.1",
     "cheerio": "^1.2.0",
     "chromedriver": "^148.0.3",
+    "puppeteer": "^25.0.4",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "selenium-webdriver": "^4.44.0"
   }
 }
