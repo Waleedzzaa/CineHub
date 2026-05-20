@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeddah Cinemas Dashboard</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; background-color: #fbf4d8; font-family: Arial, sans-serif; color: #2c3e50; direction: ltr; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+        h1, h2 { text-align: center; font-weight: bold; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 30px; margin-top: 30px; }
+        
+        /* Movie Card Style */
+        .card { background: white; border: 2px solid #e8dcc0; border-radius: 12px; overflow: hidden; cursor: pointer; transition: 0.3s; padding-bottom: 15px; }
+        .card:hover { transform: translateY(-8px); box-shadow: 0 12px 24px rgba(0,0,0,0.15); border-color: #d4a574; }
+        .card img { width: 100%; height: 350px; object-fit: cover; }
+        .card-content { padding: 15px; }
+        .chip { display: inline-block; background: #e8dcc0; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 10px; }
+        .genre { display: block; color: #7f8c8d; font-size: 14px; margin-top: 5px; }
+        
+        /* Buttons */
+        .btn { background: #2c3e50; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-bottom: 20px; }
+        .btn:hover { background: #34495e; }
+        .book-btn { background: #d4a574; width: 100%; padding: 12px; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 15px; }
+        .book-btn:hover { background: #b88655; }
+        
+        /* Date & Cinema Layouts */
+        .date-card { background: white; border: 2px solid #e8dcc0; padding: 30px; text-align: center; border-radius: 12px; cursor: pointer; transition: 0.3s; }
+        .date-card:hover { border-color: #d4a574; background: #fffbf5; }
+        .cinema-card { background: white; border: 1px solid #ccc; padding: 20px; border-radius: 12px; position: relative; }
+        .best-deal { border: 3px solid #27ae60 !important; background-color: #d4f4dd !important; }
+        .badge { background: #27ae60; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; float: right; font-weight: bold; }
+        
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div id="screen-movies">
+            <h1>🎬 Now Showing in Jeddah</h1>
+            <h3 style="text-align: center; color: #7f8c8d;">Click on any movie to check available cinema locations</h3>
+            <div class="grid" id="movies-grid"></div>
+        </div>
+
+        <div id="screen-dates" class="hidden">
+            <button class="btn" onclick="showScreen('movies')">← Back to Movies</button>
+            <h2 id="date-title">Select Date</h2>
+            <div class="grid">
+                <div class="date-card" onclick="selectDate('Today')"><h3>Today</h3></div>
+                <div class="date-card" onclick="selectDate('Tomorrow')"><h3>Tomorrow</h3></div>
+                <div class="date-card" onclick="selectDate('After Tomorrow')"><h3>After Tomorrow</h3></div>
+            </div>
+        </div>
+
+        <div id="screen-cinemas" class="hidden">
+            <button class="btn" onclick="showScreen('dates')">← Back to Dates</button>
+            <h2 id="cinema-title">Available Cinemas</h2>
+            <p id="cinema-subtitle" style="color: #7f8c8d; font-size: 18px;"></p>
+            <div class="grid" id="cinemas-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        // Data
+        const mockMovies = [
+            { id: '1', title: 'Michael', poster: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=600&fit=crop', genre: 'Biography/Musical', rating: 'PG-13' },
+            { id: '2', title: 'Wicked', poster: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=600&fit=crop', genre: 'Musical/Fantasy', rating: 'PG' },
+            { id: '3', title: 'Gladiator II', poster: 'https://images.unsplash.com/photo-1533613220915-609f661a6fe1?w=400&h=600&fit=crop', genre: 'Action/Adventure', rating: 'R' },
+            { id: '4', title: 'Sonic 3', poster: 'https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae?w=400&h=600&fit=crop', genre: 'Action/Comedy', rating: 'PG' }
+        ];
+
+        const jeddahLocations = [
+            { id: 'l1', name: 'Muvi Cinema', mall: 'Yasmin Mall', website: 'https://www.muvi.com.sa' },
+            { id: 'l2', name: 'Muvi Cinema', mall: 'Aziz Mall', website: 'https://www.muvi.com.sa' },
+            { id: 'l3', name: 'Vox Cinema', mall: 'Red Sea Mall', website: 'https://ksa.voxcinemas.com' },
+            { id: 'l4', name: 'AMC Cinema', mall: 'Stars Avenue', website: 'https://www.amccinemas.com.sa' }
+        ];
+
+        let selectedMovie = null;
+        let selectedDate = null;
+
+        // Render Movies
+        const moviesGrid = document.getElementById('movies-grid');
+        mockMovies.forEach(movie => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.onclick = () => selectMovie(movie);
+            card.innerHTML = `
+                <img src="${movie.poster}" alt="${movie.title}">
+                <div class="card-content">
+                    <h3 style="margin:0;">${movie.title}</h3>
+                    <span class="genre">${movie.genre}</span>
+                    <span class="chip">${movie.rating}</span>
+                </div>
+            `;
+            moviesGrid.appendChild(card);
+        });
+
+        function showScreen(screenId) {
+            document.getElementById('screen-movies').className = screenId === 'movies' ? '' : 'hidden';
+            document.getElementById('screen-dates').className = screenId === 'dates' ? '' : 'hidden';
+            document.getElementById('screen-cinemas').className = screenId === 'cinemas' ? '' : 'hidden';
+        }
+
+        function selectMovie(movie) {
+            selectedMovie = movie;
+            document.getElementById('date-title').innerText = `Select Date for: ${movie.title}`;
+            showScreen('dates');
+        }
+
+        function selectDate(date) {
+            selectedDate = date;
+            document.getElementById('cinema-title').innerText = `Available Cinemas for: ${selectedMovie.title}`;
+            document.getElementById('cinema-subtitle').innerText = `Showing Time: ${date}`;
+            
+            // Generate Random Bookings
+            const locationsWithBookings = jeddahLocations.map(loc => ({
+                ...loc,
+                bookingPercentage: Math.floor(Math.random() * 50) + 20
+            }));
+
+            // Find Lowest
+            const lowestLoc = locationsWithBookings.reduce((min, loc) => loc.bookingPercentage < min.bookingPercentage ? loc : min);
+
+            // Render Cinemas
+            const cinemasGrid = document.getElementById('cinemas-grid');
+            cinemasGrid.innerHTML = ''; // clear
+
+            locationsWithBookings.forEach(loc => {
+                const isBest = loc.id === lowestLoc.id;
+                const card = document.createElement('div');
+                card.className = `cinema-card ${isBest ? 'best-deal' : ''}`;
+                card.innerHTML = `
+                    <div>
+                        ${isBest ? '<span class="badge">BEST DEAL</span>' : ''}
+                        <h3 style="margin:0 0 10px 0;">${loc.name}</h3>
+                        <p style="margin:5px 0; color:#5a5a5a;">📍 ${loc.mall}</p>
+                        <p style="font-weight:bold; margin-top:15px; color: ${isBest ? 'green' : 'red'}">
+                            Booking Status: ${loc.bookingPercentage}% Filled
+                        </p>
+                        <button class="book-btn" onclick="window.open('${loc.website}', '_blank')">Book Tickets Now</button>
+                    </div>
+                `;
+                cinemasGrid.appendChild(card);
+            });
+
+            showScreen('cinemas');
+        }
+    </script>
+</body>
+</html>
