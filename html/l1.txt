@@ -1,0 +1,536 @@
+import { useState } from 'react';
+import { Card, CardContent, CardMedia, Typography, Container, Grid, Box, Chip, IconButton, Button } from '@mui/material';
+import { ArrowBack } from '@mui/icons-material';
+import { MapPin, Percent, Calendar, ExternalLink } from 'lucide-react';
+
+interface Location {
+  id: string;
+  name: string;
+  mall: string;
+  bookingPercentage: number;
+  website: string;
+}
+
+interface Movie {
+  id: string;
+  title: string;
+  poster: string;
+  genre: string;
+  rating: string;
+  year: string;
+  locations: Location[];
+}
+
+interface DateOption {
+  id: string;
+  label: string;
+  date: string;
+}
+
+const jeddahLocations: Location[] = [
+  { id: 'l1', name: 'Muvi Cinema', mall: 'Yasmin Mall', bookingPercentage: 0, website: 'https://www.muvi.com.sa' },
+  { id: 'l2', name: 'Muvi Cinema', mall: 'Aziz Mall', bookingPercentage: 0, website: 'https://www.muvi.com.sa' },
+  { id: 'l3', name: 'Muvi Cinema', mall: 'Arab Mall', bookingPercentage: 0, website: 'https://www.muvi.com.sa' },
+  { id: 'l4', name: 'Fox Cinema', mall: 'Red Sea Mall', bookingPercentage: 0, website: 'https://www.foxcinema.com.sa' },
+  { id: 'l5', name: 'Fox Cinema', mall: 'Jeddah Park', bookingPercentage: 0, website: 'https://www.foxcinema.com.sa' },
+  { id: 'l6', name: 'Fox Cinema', mall: 'Town Square', bookingPercentage: 0, website: 'https://www.foxcinema.com.sa' },
+  { id: 'l7', name: 'AMC Cinema', mall: 'Stars Avenue', bookingPercentage: 0, website: 'https://www.amccinemas.com.sa' }
+];
+
+const getDateOptions = (): DateOption[] => {
+  const today = new Date();
+  const options: DateOption[] = [];
+
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+
+    let label = '';
+    if (i === 0) label = 'Today';
+    else if (i === 1) label = 'Tomorrow';
+    else label = dayNames[date.getDay()];
+
+    const dateStr = `${monthNames[date.getMonth()]} ${date.getDate()}`;
+
+    options.push({
+      id: `day${i}`,
+      label: label,
+      date: dateStr
+    });
+  }
+
+  return options;
+};
+
+const generateRandomBookings = () => {
+  return jeddahLocations.map(loc => ({
+    ...loc,
+    bookingPercentage: Math.floor(Math.random() * 60) + 20
+  }));
+};
+
+const mockMovies: Movie[] = [
+  {
+    id: '1',
+    title: 'Michael',
+    poster: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=600&fit=crop',
+    genre: 'Biography/Musical',
+    rating: 'PG-13',
+    year: '2025',
+    locations: generateRandomBookings()
+  },
+  {
+    id: '2',
+    title: 'Wicked',
+    poster: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=600&fit=crop',
+    genre: 'Musical/Fantasy',
+    rating: 'PG',
+    year: '2024',
+    locations: generateRandomBookings()
+  },
+  {
+    id: '3',
+    title: 'Gladiator II',
+    poster: 'https://images.unsplash.com/photo-1533613220915-609f661a6fe1?w=400&h=600&fit=crop',
+    genre: 'Action/Adventure',
+    rating: 'R',
+    year: '2024',
+    locations: generateRandomBookings()
+  },
+  {
+    id: '4',
+    title: 'Sonic the Hedgehog 3',
+    poster: 'https://images.unsplash.com/photo-1612198188060-c7c2a3b66eae?w=400&h=600&fit=crop',
+    genre: 'Action/Comedy',
+    rating: 'PG',
+    year: '2024',
+    locations: generateRandomBookings()
+  },
+  {
+    id: '5',
+    title: 'Moana 2',
+    poster: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=600&fit=crop',
+    genre: 'Animation/Adventure',
+    rating: 'PG',
+    year: '2024',
+    locations: generateRandomBookings()
+  },
+  {
+    id: '6',
+    title: 'Mufasa: The Lion King',
+    poster: 'https://images.unsplash.com/photo-1516728778615-2d590ea1855e?w=400&h=600&fit=crop',
+    genre: 'Animation/Adventure',
+    rating: 'PG',
+    year: '2024',
+    locations: generateRandomBookings()
+  },
+  {
+    id: '7',
+    title: 'A Quiet Place: Day One',
+    poster: 'https://images.unsplash.com/photo-1518676590629-3dcbd9c5a5c9?w=400&h=600&fit=crop',
+    genre: 'Horror/Thriller',
+    rating: 'PG-13',
+    year: '2024',
+    locations: generateRandomBookings()
+  },
+  {
+    id: '8',
+    title: 'Inside Out 2',
+    poster: 'https://images.unsplash.com/photo-1606602219483-5d34e51d3f5c?w=400&h=600&fit=crop',
+    genre: 'Animation/Comedy',
+    rating: 'PG',
+    year: '2024',
+    locations: generateRandomBookings()
+  }
+];
+
+export default function App() {
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [selectedDate, setSelectedDate] = useState<DateOption | null>(null);
+
+  const getLowestBookingLocation = (locations: Location[]) => {
+    return locations.reduce((min, loc) =>
+      loc.bookingPercentage < min.bookingPercentage ? loc : min
+    );
+  };
+
+  const handleLocationClick = (location: Location) => {
+    window.open(location.website, '_blank');
+  };
+
+  const handleBackFromLocations = () => {
+    setSelectedDate(null);
+  };
+
+  const handleBackFromDates = () => {
+    setSelectedMovie(null);
+    setSelectedDate(null);
+  };
+
+  // Date Selection Screen
+  if (selectedMovie && !selectedDate) {
+    const dateOptions = getDateOptions();
+
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#fbf4d8' }}>
+        <Container maxWidth="lg" sx={{ py: 5 }}>
+          <Box sx={{ mb: 5 }}>
+            <IconButton
+              onClick={handleBackFromDates}
+              sx={{
+                color: '#2c3e50',
+                bgcolor: '#fff',
+                mb: 3,
+                '&:hover': { bgcolor: '#f0f0f0' }
+              }}
+            >
+              <ArrowBack />
+            </IconButton>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 2 }}>
+              <Typography variant="h3" sx={{ color: '#2c3e50', fontWeight: 'bold' }}>
+                {selectedMovie.title}
+              </Typography>
+              <Chip
+                label={selectedMovie.year}
+                sx={{
+                  bgcolor: '#d4a574',
+                  color: '#fff',
+                  fontSize: '1rem',
+                  height: '32px'
+                }}
+              />
+            </Box>
+          </Box>
+
+          <Typography variant="h4" sx={{ color: '#2c3e50', mb: 4, fontWeight: '600', textAlign: 'center' }}>
+            <Calendar size={32} style={{ verticalAlign: 'middle', marginRight: '12px' }} />
+            Select Your Date
+          </Typography>
+
+          <Grid container spacing={3} justifyContent="center">
+            {dateOptions.map((dateOption) => (
+              <Grid item xs={12} sm={6} md={4} key={dateOption.id}>
+                <Card
+                  onClick={() => setSelectedDate(dateOption)}
+                  sx={{
+                    cursor: 'pointer',
+                    bgcolor: '#ffffff',
+                    border: '2px solid #e8dcc0',
+                    transition: 'all 0.3s',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: '0 12px 32px rgba(0,0,0,0.2)',
+                      border: '2px solid #d4a574',
+                      bgcolor: '#fffbf5'
+                    }
+                  }}
+                >
+                  <CardContent sx={{ p: 4, textAlign: 'center' }}>
+                    <Calendar size={48} color="#d4a574" style={{ marginBottom: '16px' }} />
+                    <Typography variant="h4" sx={{ color: '#2c3e50', fontWeight: 'bold', mb: 1 }}>
+                      {dateOption.label}
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: '#5a5a5a' }}>
+                      {dateOption.date}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+      </div>
+    );
+  }
+
+  // Locations Screen
+  if (selectedMovie && selectedDate) {
+    const lowestLocation = getLowestBookingLocation(selectedMovie.locations);
+
+    return (
+      <div style={{ minHeight: '100vh', backgroundColor: '#fbf4d8' }}>
+        <Container maxWidth="xl" sx={{ py: 5 }}>
+          <Box sx={{ mb: 5 }}>
+            <IconButton
+              onClick={handleBackFromLocations}
+              sx={{
+                color: '#2c3e50',
+                bgcolor: '#fff',
+                mb: 3,
+                '&:hover': { bgcolor: '#f0f0f0' }
+              }}
+            >
+              <ArrowBack />
+            </IconButton>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 2 }}>
+              <Typography variant="h3" sx={{ color: '#2c3e50', fontWeight: 'bold' }}>
+                {selectedMovie.title}
+              </Typography>
+              <Chip
+                label={selectedMovie.year}
+                sx={{
+                  bgcolor: '#d4a574',
+                  color: '#fff',
+                  fontSize: '1rem',
+                  height: '32px'
+                }}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
+              <Chip
+                label={selectedMovie.genre}
+                sx={{ bgcolor: '#e8dcc0', color: '#2c3e50', fontSize: '0.95rem' }}
+              />
+              <Chip
+                label={selectedMovie.rating}
+                sx={{ bgcolor: '#e8dcc0', color: '#2c3e50', fontSize: '0.95rem' }}
+              />
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Calendar size={20} color="#d4a574" />
+              <Typography variant="h6" sx={{ color: '#5a5a5a' }}>
+                {selectedDate.label} - {selectedDate.date}
+              </Typography>
+            </Box>
+          </Box>
+
+          <Typography variant="h4" sx={{ color: '#2c3e50', mb: 4, fontWeight: '600' }}>
+            Jeddah Cinemas - Available Locations
+          </Typography>
+
+          <Grid container spacing={3}>
+            {selectedMovie.locations.map((location) => {
+              const isLowest = location.id === lowestLocation.id;
+              return (
+                <Grid item xs={12} md={6} key={location.id}>
+                  <Card
+                    onClick={() => handleLocationClick(location)}
+                    sx={{
+                      cursor: 'pointer',
+                      bgcolor: isLowest ? '#d4f4dd' : '#ffffff',
+                      border: isLowest ? '3px solid #27ae60' : '2px solid #e8dcc0',
+                      transition: 'all 0.3s',
+                      height: '100%',
+                      '&:hover': {
+                        transform: 'translateY(-8px)',
+                        boxShadow: '0 12px 32px rgba(0,0,0,0.2)',
+                        border: isLowest ? '3px solid #27ae60' : '2px solid #d4a574'
+                      }
+                    }}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2.5 }}>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="h5" sx={{ color: '#2c3e50', fontWeight: 'bold', mb: 0.5 }}>
+                            {location.name}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <MapPin size={18} color="#d4a574" />
+                            <Typography variant="body1" sx={{ color: '#5a5a5a' }}>
+                              {location.mall}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        {isLowest && (
+                          <Chip
+                            label="BEST DEAL"
+                            sx={{
+                              bgcolor: '#27ae60',
+                              color: '#fff',
+                              fontWeight: 'bold',
+                              fontSize: '0.85rem'
+                            }}
+                          />
+                        )}
+                      </Box>
+
+                      <Box
+                        sx={{
+                          p: 2.5,
+                          borderRadius: 2,
+                          bgcolor: isLowest ? '#fff' : '#f8f8f8',
+                          border: isLowest ? '2px solid #27ae60' : 'none'
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                          <Percent size={28} color={isLowest ? '#27ae60' : '#d4a574'} />
+                          <Typography variant="body1" sx={{ color: '#2c3e50', fontWeight: '600' }}>
+                            Booking Status
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Box
+                            sx={{
+                              flex: 1,
+                              height: 12,
+                              bgcolor: '#e0e0e0',
+                              borderRadius: 2,
+                              overflow: 'hidden'
+                            }}
+                          >
+                            <Box
+                              sx={{
+                                height: '100%',
+                                width: `${location.bookingPercentage}%`,
+                                bgcolor: isLowest ? '#27ae60' : '#e74c3c',
+                                transition: 'width 0.5s'
+                              }}
+                            />
+                          </Box>
+                          <Typography
+                            variant="h5"
+                            sx={{
+                              color: isLowest ? '#27ae60' : '#e74c3c',
+                              fontWeight: 'bold',
+                              minWidth: '70px',
+                              textAlign: 'right'
+                            }}
+                          >
+                            {location.bookingPercentage}%
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      {isLowest && (
+                        <Box
+                          sx={{
+                            mt: 2,
+                            p: 1.5,
+                            bgcolor: '#27ae60',
+                            borderRadius: 1.5,
+                            textAlign: 'center'
+                          }}
+                        >
+                          <Typography
+                            variant="body1"
+                            sx={{
+                              color: '#fff',
+                              fontWeight: '600'
+                            }}
+                          >
+                            ⭐ Most Available Seats - Book Now!
+                          </Typography>
+                        </Box>
+                      )}
+
+                      <Box
+                        sx={{
+                          mt: 2,
+                          p: 1.5,
+                          bgcolor: '#d4a574',
+                          borderRadius: 1.5,
+                          textAlign: 'center',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 1
+                        }}
+                      >
+                        <ExternalLink size={18} color="#fff" />
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            color: '#fff',
+                            fontWeight: '600'
+                          }}
+                        >
+                          Click to Book on {location.name} Website
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Container>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', backgroundColor: '#fbf4d8', paddingBottom: '60px' }}>
+      <Container maxWidth="xl" sx={{ py: 5 }}>
+        <Box sx={{ textAlign: 'center', mb: 6 }}>
+          <Typography
+            variant="h2"
+            sx={{
+              color: '#2c3e50',
+              fontWeight: 'bold',
+              mb: 2,
+              fontSize: { xs: '2.5rem', md: '3.5rem' }
+            }}
+          >
+            🎬 Now Showing in Jeddah
+          </Typography>
+          <Typography
+            variant="h5"
+            sx={{
+              color: '#5a5a5a',
+              maxWidth: '800px',
+              margin: '0 auto'
+            }}
+          >
+            Click on any movie to see cinema locations and find the best available seats
+          </Typography>
+        </Box>
+
+        <Grid container spacing={4}>
+          {mockMovies.map((movie) => (
+            <Grid item xs={12} sm={6} md={4} xl={3} key={movie.id}>
+              <Card
+                onClick={() => setSelectedMovie(movie)}
+                sx={{
+                  cursor: 'pointer',
+                  bgcolor: '#ffffff',
+                  border: '2px solid #e8dcc0',
+                  borderRadius: 2,
+                  transition: 'all 0.3s',
+                  height: '100%',
+                  '&:hover': {
+                    transform: 'translateY(-12px)',
+                    boxShadow: '0 16px 32px rgba(0,0,0,0.2)',
+                    border: '2px solid #d4a574'
+                  }
+                }}
+              >
+                <CardMedia
+                  component="img"
+                  height="450"
+                  image={movie.poster}
+                  alt={movie.title}
+                  sx={{ objectFit: 'cover' }}
+                />
+                <CardContent sx={{ p: 2.5 }}>
+                  <Typography variant="h6" sx={{ color: '#2c3e50', fontWeight: 'bold', mb: 1.5 }}>
+                    {movie.title}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Chip
+                      label={movie.genre}
+                      size="small"
+                      sx={{ bgcolor: '#d4a574', color: '#fff' }}
+                    />
+                    <Chip
+                      label={movie.rating}
+                      size="small"
+                      sx={{ bgcolor: '#e8dcc0', color: '#2c3e50' }}
+                    />
+                    <Chip
+                      label={movie.year}
+                      size="small"
+                      sx={{ bgcolor: '#e8dcc0', color: '#2c3e50' }}
+                    />
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+    </div>
+  );
+}
